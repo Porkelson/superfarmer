@@ -9,7 +9,7 @@ CORS(app)
 
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 GAME_KEY = 'superfarmer:game'
-
+NUM_PLAYERS = 1
 ANIMALS = ["rabbit", "sheep", "pig", "cow", "horse"]
 DOGS = ["smallDog", "bigDog"]
 
@@ -37,24 +37,41 @@ EXCHANGE_TABLE = {
 }
 
 def initial_game_state():
+    players = [{
+        "animals": {a: 0 for a in ANIMALS},
+        "smallDogs": 0,
+        "bigDogs": 0
+    } for _ in range(NUM_PLAYERS)]
+    for p in players:
+        p["animals"]["rabbit"] = 1
+    mainHerd = {
+        "rabbit": 60 - len(players),
+        "sheep": 24,
+        "pig": 20,
+        "cow": 12,
+        "horse": 6,
+        "smallDogs": 4,
+        "bigDogs": 2
+    }
     return {
-        "players": [{
-            "animals": {a: 0 for a in ANIMALS},
-            "smallDogs": 0,
-            "bigDogs": 0
-        }],
-        "mainHerd": {
-            "rabbit": 60, "sheep": 24, "pig": 20, "cow": 12, "horse": 6,
-            "smallDogs": 4, "bigDogs": 2
-        },
+        "players": players,
+        "mainHerd": mainHerd,
         "currentPlayer": 0,
         "log": [],
-        "gameEnded": False
+        "gameEnded": False,
+        "exchangeUsed": False
     }
 
 def get_game():
     data = r.get(GAME_KEY)
-    return json.loads(data) if data else initial_game_state()
+    try:
+        game = json.loads(data) if data else initial_game_state()
+        # Walidacja minimalna
+        if not isinstance(game, dict) or "players" not in game or not isinstance(game["players"], list):
+            return initial_game_state()
+        return game
+    except Exception:
+        return initial_game_state()
 
 def save_game(state):
     r.set(GAME_KEY, json.dumps(state))
@@ -121,13 +138,15 @@ def handle_attacks(player, dice, mainHerd):
                 log.append("Wilk zabrał wszystkie owce, świnie i krowy!")
     return player, mainHerd, log
 
-def exchange_animals(player, mainHerd, from_, to_):
+def exchange_animals(player, mainHerd, from_, to_, exchangeUsed):
     log = ""
+    if exchangeUsed:
+        return player, mainHerd, "Wymiana już została wykonana w tej turze!"
+    # Szukaj przelicznika w obie strony
     for key, ex in EXCHANGE_TABLE.items():
+        # W górę (np. 6 królików -> 1 owca)
         if ex["from"] == from_ and ex["to"] == to_:
-            # Sprawdź czy gracz ma wystarczająco zwierząt
             if (from_ in DOGS and player[from_ + 's'] >= ex["cost"]) or (from_ in ANIMALS and player["animals"][from_] >= ex["cost"]):
-                # Sprawdź czy w głównym stadzie jest docelowe zwierzę
                 if (to_ in DOGS and mainHerd[to_ + 's'] > 0) or (to_ in ANIMALS and mainHerd[to_] > 0):
                     # Odejmij od gracza
                     if from_ in DOGS:
@@ -152,6 +171,33 @@ def exchange_animals(player, mainHerd, from_, to_):
             else:
                 log = f"Za mało {from_} do wymiany!"
             break
+        # W dół (np. 1 owca -> 6 królików)
+        elif ex["from"] == to_ and ex["to"] == from_:
+            if (to_ in DOGS and player[to_ + 's'] >= 1) or (to_ in ANIMALS and player["animals"][to_] >= 1):
+                if (from_ in DOGS and mainHerd[from_ + 's'] >= ex["cost"]) or (from_ in ANIMALS and mainHerd[from_] >= ex["cost"]):
+                    # Odejmij od gracza
+                    if to_ in DOGS:
+                        player[to_ + 's'] -= 1
+                    else:
+                        player["animals"][to_] -= 1
+                    # Dodaj do głównego stada
+                    if to_ in DOGS:
+                        mainHerd[to_ + 's'] += 1
+                    else:
+                        mainHerd[to_] += 1
+                    # Dodaj do gracza
+                    if from_ in DOGS:
+                        player[from_ + 's'] += ex["cost"]
+                        mainHerd[from_ + 's'] -= ex["cost"]
+                    else:
+                        player["animals"][from_] += ex["cost"]
+                        mainHerd[from_] -= ex["cost"]
+                    log = f"Wymiana: 1 {to_} na {ex['cost']} {from_}"
+                else:
+                    log = f"Brak {from_} w głównym stadzie!"
+            else:
+                log = f"Za mało {to_} do wymiany!"
+            break
     return player, mainHerd, log
 
 @app.route('/game', methods=['GET'])
@@ -162,6 +208,7 @@ def get_game_route():
 def roll_route():
     game = get_game()
     dice = roll_dice()
+    exchangeUsed = False
     player = dict(game["players"][game["currentPlayer"]])
     mainHerd = dict(game["mainHerd"])
     log = []
@@ -176,6 +223,7 @@ def roll_route():
     game["mainHerd"] = mainHerd
     game["diceResult"] = dice
     game["log"] += log
+    game["exchangeUsed"] = exchangeUsed
     if check_win(player):
         game["gameEnded"] = True
         game["winner"] = game["currentPlayer"]
@@ -189,12 +237,69 @@ def exchange_route():
     from_ = data.get("from")
     to_ = data.get("to")
     game = get_game()
+    if game["exchangeUsed"]:
+        return jsonify({"error": "Wymiana już została wykonana w tej turze!"}), 400
     player = dict(game["players"][game["currentPlayer"]])
     mainHerd = dict(game["mainHerd"])
-    player, mainHerd, log = exchange_animals(player, mainHerd, from_, to_)
+    player, mainHerd, log = exchange_animals(player, mainHerd, from_, to_, game["exchangeUsed"])
     game["players"][game["currentPlayer"]] = player
     game["mainHerd"] = mainHerd
     game["log"].append(log)
+    game["exchangeUsed"] = True
+    save_game(game)
+    return jsonify(game)
+
+@app.route('/exchange-with-player', methods=['POST'])
+def exchange_with_player():
+    data = request.get_json()
+    from_ = data.get("from")
+    to_ = data.get("to")
+    fromPlayer = data.get("fromPlayer")
+    toPlayer = data.get("toPlayer")
+    amount = data.get("amount", 1)
+    game = get_game()
+    if game["exchangeUsed"]:
+        return jsonify({"error": "Wymiana już została wykonana w tej turze!"}), 400
+    p1 = dict(game["players"][fromPlayer])
+    p2 = dict(game["players"][toPlayer])
+    # Sprawdź czy p1 ma odpowiednią ilość from_, p2 ma odpowiednią ilość to_
+    if from_ in DOGS:
+        if p1[from_ + 's'] < amount:
+            return jsonify({"error": f"Gracz {fromPlayer} nie ma wystarczająco {from_}"}), 400
+    else:
+        if p1["animals"][from_] < amount:
+            return jsonify({"error": f"Gracz {fromPlayer} nie ma wystarczająco {from_}"}), 400
+    if to_ in DOGS:
+        if p2[to_ + 's'] < 1:
+            return jsonify({"error": f"Gracz {toPlayer} nie ma {to_}"}), 400
+    else:
+        if p2["animals"][to_] < 1:
+            return jsonify({"error": f"Gracz {toPlayer} nie ma {to_}"}), 400
+    # Wymiana
+    if from_ in DOGS:
+        p1[from_ + 's'] -= amount
+        p2[from_ + 's'] += amount
+    else:
+        p1["animals"][from_] -= amount
+        p2["animals"][from_] += amount
+    if to_ in DOGS:
+        p2[to_ + 's'] -= 1
+        p1[to_ + 's'] += 1
+    else:
+        p2["animals"][to_] -= 1
+        p1["animals"][to_] += 1
+    game["players"][fromPlayer] = p1
+    game["players"][toPlayer] = p2
+    game["log"].append(f"Gracz {fromPlayer} wymienił {amount} {from_} na 1 {to_} z graczem {toPlayer}")
+    game["exchangeUsed"] = True
+    save_game(game)
+    return jsonify(game)
+
+@app.route('/end-turn', methods=['POST'])
+def end_turn():
+    game = get_game()
+    game["currentPlayer"] = (game["currentPlayer"] + 1) % len(game["players"])
+    game["exchangeUsed"] = False
     save_game(game)
     return jsonify(game)
 
@@ -203,6 +308,14 @@ def reset_route():
     game = initial_game_state()
     save_game(game)
     return jsonify(game)
+
+@app.route('/dev/set-state', methods=['POST'])
+def dev_set_state():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    save_game(data)
+    return jsonify({"status": "ok"})
 
 if __name__ == '__main__':
     app.run(port=4000, debug=True) 
