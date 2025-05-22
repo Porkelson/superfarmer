@@ -73,32 +73,35 @@ function DiceRoller({ onRoll, diceResult, gameEnded }: { onRoll: () => void; dic
   );
 }
 
-function ExchangeModal({ open, onClose, onExchange, disabled }: { open: boolean; onClose: () => void; onExchange: (from: Animal | Dog, to: Animal | Dog) => void; disabled: boolean }) {
-  const [selected, setSelected] = useState(exchangeOptions[0]);
-  useEffect(() => { if (open) setSelected(exchangeOptions[0]); }, [open]);
+function ExchangeTable({ onExchange, disabled }: { onExchange: (from: Animal | Dog, to: Animal | Dog) => void; disabled: boolean }) {
   return (
-    <dialog className={`modal ${open ? "modal-open" : ""}`}>
-      <form method="dialog" className="modal-box" onSubmit={e => { e.preventDefault(); onExchange(selected.from as Animal | Dog, selected.to as Animal | Dog); onClose(); }}>
-        <h3 className="font-bold text-lg mb-2">Wymiana</h3>
-        <select
-          className="select select-bordered w-full mb-4"
-          value={selected.label}
-          onChange={e => {
-            const opt = exchangeOptions.find(o => o.label === e.target.value);
-            if (opt) setSelected(opt);
-          }}
-          disabled={disabled}
-        >
+    <div className="card bg-base-200 shadow p-4 mb-4">
+      <h2 className="card-title mb-2">Wymiana</h2>
+      <table className="table w-full">
+        <thead>
+          <tr>
+            <th>Opcja</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
           {exchangeOptions.map(opt => (
-            <option key={opt.label} value={opt.label}>{opt.label}</option>
+            <tr key={opt.label}>
+              <td>{opt.label}</td>
+              <td>
+                <button
+                  className="btn btn-success btn-sm"
+                  onClick={() => onExchange(opt.from as Animal | Dog, opt.to as Animal | Dog)}
+                  disabled={disabled}
+                >
+                  Wymień
+                </button>
+              </td>
+            </tr>
           ))}
-        </select>
-        <div className="modal-action">
-          <button type="submit" className="btn btn-success" disabled={disabled}>Wymień</button>
-          <button type="button" className="btn" onClick={onClose}>Anuluj</button>
-        </div>
-      </form>
-    </dialog>
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -123,7 +126,10 @@ function GameEndChecker({ gameEnded, onReset }: { gameEnded: boolean; onReset: (
 }
 
 function ThemeSwitcher() {
-  const [theme, setTheme] = useState<string>("light");
+  const [theme, setTheme] = useState<string>(() => {
+    // domyślny motyw: ciemny
+    return "dark";
+  });
   useEffect(() => { document.documentElement.setAttribute("data-theme", theme); }, [theme]);
   return (
     <div className="flex gap-2 items-center mb-4">
@@ -179,13 +185,24 @@ function DevPanel({ game, refresh }: { game: GameState; refresh: () => void }) {
 function App() {
   const [game, setGame] = useState<GameState | null>(null);
   const [loading, setLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchGame = () => {
     fetch(`${API_URL}/game`)
-      .then(res => res.json())
-      .then(setGame);
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok && data.error) {
+          setError(data.error);
+          setGame(null);
+        } else {
+          setGame(data);
+        }
+      })
+      .catch(() => {
+        setError("Błąd połączenia z backendem");
+        setGame(null);
+      });
   };
 
   // Pobierz stan gry na start
@@ -222,6 +239,7 @@ function App() {
   const exchange = async (from: Animal | Dog, to: Animal | Dog) => {
     setLoading(true);
     setError(null);
+    setSuccess(null);
     const res = await fetch(`${API_URL}/exchange`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -229,34 +247,56 @@ function App() {
     });
     const data = await res.json();
     if (!res.ok && data.error) {
-      setError(data.error);
+      if (
+        data.error.includes("Wymiana już została wykonana") ||
+        data.error.includes("Za mało") ||
+        data.error.includes("Brak")
+      ) {
+        setError(data.error);
+      }
     } else {
       setGame(data);
+      // Wyciągnij ostatni wpis z logu, jeśli to komunikat o wymianie
+      if (data && data.log && Array.isArray(data.log)) {
+        const lastLog = data.log[data.log.length - 1];
+        if (typeof lastLog === "string" && lastLog.startsWith("Wymiana:")) {
+          setSuccess(lastLog);
+          setTimeout(() => setSuccess(null), 3500);
+        }
+      }
     }
     setLoading(false);
   };
 
-  if (!game) return <div className="p-8">Ładowanie...</div>;
+  // Defensywna obsługa niepoprawnych danych gry
+  if (!game || !game.players || !Array.isArray(game.players) || !game.players[0] || !game.players[0].animals) {
+    return <div className="p-8">Błąd: niepoprawny stan gry. <button className="btn btn-secondary ml-2" onClick={fetchGame}>Spróbuj ponownie</button></div>;
+  }
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
       <h1 className="text-3xl font-bold mb-4 text-center">🐾 Superfarmer</h1>
       <ThemeSwitcher />
+      {error && (
+        <div className="alert alert-error mb-4 flex justify-between items-center sticky top-0 z-50">
+          <span>{error}</span>
+          <button className="btn btn-xs ml-2" onClick={() => setError(null)}>X</button>
+        </div>
+      )}
+      {success && (
+        <div className="alert alert-success mb-4 flex justify-between items-center sticky top-0 z-50">
+          <span>{success}</span>
+          <button className="btn btn-xs ml-2" onClick={() => setSuccess(null)}>X</button>
+        </div>
+      )}
       <div className="flex flex-col gap-4">
-        {error && (
-          <div className="alert alert-error mb-2 flex justify-between items-center">
-            <span>{error}</span>
-            <button className="btn btn-xs ml-2" onClick={() => setError(null)}>X</button>
-          </div>
-        )}
         {game.players[0] && <PlayerBoard player={game.players[0]} />}
         <MainHerd mainHerd={game.mainHerd} />
         <div className="flex gap-2 mb-2">
           <DiceRoller onRoll={roll} diceResult={game.diceResult} gameEnded={game.gameEnded || loading} />
           <button className="btn btn-secondary" onClick={reset} disabled={game.gameEnded || loading}>Reset gry</button>
-          <button className="btn btn-accent" onClick={() => setModalOpen(true)} disabled={game.gameEnded || loading}>Wymiana</button>
         </div>
-        <ExchangeModal open={modalOpen} onClose={() => setModalOpen(false)} onExchange={exchange} disabled={game.gameEnded || loading} />
+        <ExchangeTable onExchange={exchange} disabled={game.gameEnded || loading} />
         <GameLog log={game.log} />
         <GameEndChecker gameEnded={game.gameEnded} onReset={reset} />
         {/* {process.env.NODE_ENV === "development" && game && (

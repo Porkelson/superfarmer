@@ -62,16 +62,29 @@ def initial_game_state():
         "exchangeUsed": False
     }
 
+def validate_game(game):
+    if not isinstance(game, dict):
+        return False
+    if "players" not in game or not isinstance(game["players"], list) or len(game["players"]) < 1:
+        return False
+    for p in game["players"]:
+        if not isinstance(p, dict):
+            return False
+        if "animals" not in p or not isinstance(p["animals"], dict):
+            return False
+    if "mainHerd" not in game or not isinstance(game["mainHerd"], dict):
+        return False
+    return True
+
 def get_game():
     data = r.get(GAME_KEY)
     try:
         game = json.loads(data) if data else initial_game_state()
-        # Walidacja minimalna
-        if not isinstance(game, dict) or "players" not in game or not isinstance(game["players"], list):
-            return initial_game_state()
+        if not validate_game(game):
+            return None
         return game
     except Exception:
-        return initial_game_state()
+        return None
 
 def save_game(state):
     r.set(GAME_KEY, json.dumps(state))
@@ -202,11 +215,16 @@ def exchange_animals(player, mainHerd, from_, to_, exchangeUsed):
 
 @app.route('/game', methods=['GET'])
 def get_game_route():
-    return jsonify(get_game())
+    game = get_game()
+    if not game:
+        return jsonify({"error": "Stan gry jest uszkodzony lub niekompletny."}), 500
+    return jsonify(game)
 
 @app.route('/roll', methods=['POST'])
 def roll_route():
     game = get_game()
+    if not game:
+        return jsonify({"error": "Stan gry jest uszkodzony lub niekompletny."}), 500
     dice = roll_dice()
     exchangeUsed = False
     player = dict(game["players"][game["currentPlayer"]])
@@ -237,11 +255,16 @@ def exchange_route():
     from_ = data.get("from")
     to_ = data.get("to")
     game = get_game()
+    if not game:
+        return jsonify({"error": "Stan gry jest uszkodzony lub niekompletny."}), 500
     if game["exchangeUsed"]:
         return jsonify({"error": "Wymiana już została wykonana w tej turze!"}), 400
     player = dict(game["players"][game["currentPlayer"]])
     mainHerd = dict(game["mainHerd"])
     player, mainHerd, log = exchange_animals(player, mainHerd, from_, to_, game["exchangeUsed"])
+    # Jeśli log to błąd, zwróć kod 400 i error
+    if isinstance(log, str) and (log.startswith("Za mało") or log.startswith("Brak ")):
+        return jsonify({"error": log}), 400
     game["players"][game["currentPlayer"]] = player
     game["mainHerd"] = mainHerd
     game["log"].append(log)
@@ -258,6 +281,8 @@ def exchange_with_player():
     toPlayer = data.get("toPlayer")
     amount = data.get("amount", 1)
     game = get_game()
+    if not game:
+        return jsonify({"error": "Stan gry jest uszkodzony lub niekompletny."}), 500
     if game["exchangeUsed"]:
         return jsonify({"error": "Wymiana już została wykonana w tej turze!"}), 400
     p1 = dict(game["players"][fromPlayer])
@@ -298,6 +323,8 @@ def exchange_with_player():
 @app.route('/end-turn', methods=['POST'])
 def end_turn():
     game = get_game()
+    if not game:
+        return jsonify({"error": "Stan gry jest uszkodzony lub niekompletny."}), 500
     game["currentPlayer"] = (game["currentPlayer"] + 1) % len(game["players"])
     game["exchangeUsed"] = False
     save_game(game)
@@ -315,6 +342,13 @@ def dev_set_state():
     if not data:
         return jsonify({"error": "No data provided"}), 400
     save_game(data)
+    return jsonify({"status": "ok"})
+
+@app.route('/health', methods=['GET'])
+def health_route():
+    game = get_game()
+    if not game:
+        return jsonify({"status": "error", "message": "Stan gry jest uszkodzony lub niekompletny."}), 500
     return jsonify({"status": "ok"})
 
 if __name__ == '__main__':
