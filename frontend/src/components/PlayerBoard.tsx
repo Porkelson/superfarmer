@@ -11,7 +11,7 @@ const animalEmojis: Record<Animal, string> = {
 
 function PlayerBoard({ player }: { player: GameState["players"][0] }) {
   return (
-    <div className="card bg-base-100 shadow-xl p-4 mb-4">
+    <div className="card bg-base-200 shadow p-4 mb-4">
       <h2 className="card-title">Twoje stado</h2>
       <div className="flex gap-4 mt-2">
         {Object.entries(player.animals).map(([animal, count]) => (

@@ -1,6 +1,13 @@
 import React from "react";
 
-function DiceRoller({ onRoll, diceResult, gameEnded }: { onRoll: () => void; diceResult?: { die1: string; die2: string }; gameEnded: boolean }) {
+interface DiceRollerProps {
+  onRoll: () => void;
+  diceResult?: { die1: string; die2: string };
+  gameEnded: boolean;
+  buttonClassName?: string;
+}
+
+function DiceRoller({ onRoll, diceResult, gameEnded, buttonClassName = "btn btn-primary" }: DiceRollerProps) {
   return (
     <div className="mb-4 flex gap-2 items-center">
       <button className="btn btn-primary" onClick={onRoll} disabled={gameEnded}>

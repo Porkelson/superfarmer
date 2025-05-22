@@ -9,12 +9,14 @@ import GameEndChecker from "./components/GameEndChecker";
 import ThemeSwitcher from "./components/ThemeSwitcher";
 import { useGameApi } from "./hooks/useGameApi";
 import Notification from "./components/Notification";
+import GameLogModal from "./components/GameLogModal";
 
 function App() {
   const [game, setGame] = useState<GameState | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showLog, setShowLog] = useState(false);
 
   const { fetchGame, roll, reset, exchange } = useGameApi(setGame, setError, setSuccess, setLoading);
 
@@ -29,24 +31,33 @@ function App() {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-2xl">
-      <div className="flex items-center justify-between mb-8 gap-4">
+    <div className="container mx-auto p-4 max-w-6xl h-screen flex flex-col">
+      <div className="flex items-center justify-between mb-6 gap-4">
         <h1 className="text-3xl font-bold text-center whitespace-nowrap">Superfarmer</h1>
         <div className="flex-shrink-0"><ThemeSwitcher /></div>
       </div>
       <Notification message={error} type="error" onClose={() => setError(null)} />
       <Notification message={success} type="success" onClose={() => setSuccess(null)} />
-      <div className="flex flex-col gap-4">
-        {game.players[0] && <PlayerBoard player={game.players[0]} />}
-        <MainHerd mainHerd={game.mainHerd} />
-        <div className="card bg-base-100 shadow flex flex-col md:flex-row items-center justify-between gap-4 p-4 mb-2">
-          <DiceRoller onRoll={roll} diceResult={game.diceResult} gameEnded={game.gameEnded || loading} />
-          <button className="btn btn-secondary w-full md:w-auto" onClick={reset} disabled={game.gameEnded || loading}>Reset gry</button>
+      <div className="flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
+        {/* Left column */}
+        <div className="flex flex-col gap-4 w-full md:w-1/2 max-h-full overflow-y-auto">
+          <PlayerBoard player={game.players[0]} />
+          <MainHerd mainHerd={game.mainHerd} />
+          <div className="flex flex-col gap-2 w-full">
+            <div className="flex flex-row gap-4 w-full mb-2">
+              <button className="btn w-1/2 h-12 text-lg" style={{minWidth: '120px'}} onClick={() => setShowLog(true)}>Pokaż logi</button>
+              <button className="btn btn-secondary w-1/2 h-12 text-lg" style={{minWidth: '120px'}} onClick={reset} disabled={game.gameEnded || loading}>Reset gry</button>
+            </div>
+            <DiceRoller onRoll={roll} diceResult={game.diceResult} gameEnded={game.gameEnded || loading} />
+          </div>
         </div>
-        <ExchangeTable onExchange={exchange} disabled={game.gameEnded || loading || game.exchangeUsed} />
-        <GameLog log={game.log} />
-        <GameEndChecker gameEnded={game.gameEnded} onReset={reset} />
+        {/* Right column */}
+        <div className="flex flex-col gap-4 w-full md:w-1/2 max-h-full overflow-y-auto">
+          <ExchangeTable onExchange={exchange} disabled={game.gameEnded || loading || game.exchangeUsed} />
+        </div>
       </div>
+      <GameEndChecker gameEnded={game.gameEnded} onReset={reset} />
+      {showLog && <GameLogModal log={game.log} onClose={() => setShowLog(false)} />}
     </div>
   );
 }

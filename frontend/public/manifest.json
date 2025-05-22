@@ -1,0 +1,8 @@
+{
+  "short_name": "Superfarmer",
+  "name": "Superfarmer Web Game",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#f3f4f6"
+} 
