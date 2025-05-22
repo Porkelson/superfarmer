@@ -7,6 +7,7 @@ import ExchangeTable from "./components/ExchangeTable";
 import GameLog from "./components/GameLog";
 import GameEndChecker from "./components/GameEndChecker";
 import ThemeSwitcher from "./components/ThemeSwitcher";
+import { useGameApi } from "./hooks/useGameApi";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
 
@@ -16,85 +17,12 @@ function App() {
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchGame = () => {
-    fetch(`${API_URL}/game`)
-      .then(async res => {
-        const data = await res.json();
-        if (!res.ok && data.error) {
-          setError(data.error);
-          setGame(null);
-        } else {
-          setGame(data);
-        }
-      })
-      .catch(() => {
-        setError("Błąd połączenia z backendem");
-        setGame(null);
-      });
-  };
+  const { fetchGame, roll, reset, exchange } = useGameApi(setGame, setError, setSuccess, setLoading);
 
   // Pobierz stan gry na start
   useEffect(() => {
     fetchGame();
-  }, []);
-
-  const roll = async () => {
-    setLoading(true);
-    setError(null);
-    const res = await fetch(`${API_URL}/roll`, { method: "POST" });
-    const data = await res.json();
-    if (!res.ok && data.error) {
-      setError(data.error);
-    } else {
-      setGame(data);
-    }
-    setLoading(false);
-  };
-
-  const reset = async () => {
-    setLoading(true);
-    setError(null);
-    const res = await fetch(`${API_URL}/reset`, { method: "POST" });
-    const data = await res.json();
-    if (!res.ok && data.error) {
-      setError(data.error);
-    } else {
-      setGame(data);
-    }
-    setLoading(false);
-  };
-
-  const exchange = async (from: Animal | Dog, to: Animal | Dog) => {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-    const res = await fetch(`${API_URL}/exchange`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to }),
-    });
-    const data = await res.json();
-    if (!res.ok && data.error) {
-      if (
-        data.error.includes("Wymiana już została wykonana") ||
-        data.error.includes("Za mało") ||
-        data.error.includes("Brak")
-      ) {
-        setError(data.error);
-      }
-    } else {
-      setGame(data);
-      // Wyciągnij ostatni wpis z logu, jeśli to komunikat o wymianie
-      if (data && data.log && Array.isArray(data.log)) {
-        const lastLog = data.log[data.log.length - 1];
-        if (typeof lastLog === "string" && lastLog.startsWith("Wymiana:")) {
-          setSuccess(lastLog);
-          setTimeout(() => setSuccess(null), 3500);
-        }
-      }
-    }
-    setLoading(false);
-  };
+  }, [fetchGame]);
 
   // Defensywna obsługa niepoprawnych danych gry
   if (!game || !game.players || !Array.isArray(game.players) || !game.players[0] || !game.players[0].animals) {
