@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Animal, Dog, GameState } from "./types";
+import { GameState } from "./types";
 import PlayerBoard from "./components/PlayerBoard";
 import MainHerd from "./components/MainHerd";
 import DiceRoller from "./components/DiceRoller";
@@ -8,8 +8,7 @@ import GameLog from "./components/GameLog";
 import GameEndChecker from "./components/GameEndChecker";
 import ThemeSwitcher from "./components/ThemeSwitcher";
 import { useGameApi } from "./hooks/useGameApi";
-
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
+import Notification from "./components/Notification";
 
 function App() {
   const [game, setGame] = useState<GameState | null>(null);
@@ -31,28 +30,18 @@ function App() {
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-3xl font-bold text-center">Superfarmer</h1>
-        <ThemeSwitcher />
+      <div className="flex items-center justify-between mb-8 gap-4">
+        <h1 className="text-3xl font-bold text-center whitespace-nowrap">Superfarmer</h1>
+        <div className="flex-shrink-0"><ThemeSwitcher /></div>
       </div>
-      {error && (
-        <div className="alert alert-error mb-4 flex justify-between items-center sticky top-0 z-50">
-          <span>{error}</span>
-          <button className="btn btn-xs ml-2" onClick={() => setError(null)}>X</button>
-        </div>
-      )}
-      {success && (
-        <div className="alert alert-success mb-4 flex justify-between items-center sticky top-0 z-50">
-          <span>{success}</span>
-          <button className="btn btn-xs ml-2" onClick={() => setSuccess(null)}>X</button>
-        </div>
-      )}
+      <Notification message={error} type="error" onClose={() => setError(null)} />
+      <Notification message={success} type="success" onClose={() => setSuccess(null)} />
       <div className="flex flex-col gap-4">
         {game.players[0] && <PlayerBoard player={game.players[0]} />}
         <MainHerd mainHerd={game.mainHerd} />
-        <div className="flex gap-2 mb-2">
+        <div className="card bg-base-100 shadow flex flex-col md:flex-row items-center justify-between gap-4 p-4 mb-2">
           <DiceRoller onRoll={roll} diceResult={game.diceResult} gameEnded={game.gameEnded || loading} />
-          <button className="btn btn-secondary" onClick={reset} disabled={game.gameEnded || loading}>Reset gry</button>
+          <button className="btn btn-secondary w-full md:w-auto" onClick={reset} disabled={game.gameEnded || loading}>Reset gry</button>
         </div>
         <ExchangeTable onExchange={exchange} disabled={game.gameEnded || loading || game.exchangeUsed} />
         <GameLog log={game.log} />
