@@ -20,4 +20,5 @@ export interface GameState {
   diceResult?: DiceResult;
   gameEnded: boolean;
   winner?: number;
+  exchangeUsed: boolean;
 } 

@@ -3,11 +3,12 @@ from flask_cors import CORS
 import redis
 import json
 import random
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+r = redis.Redis(host=os.getenv('REDIS_HOST', 'localhost'), port=6379, db=0, decode_responses=True)
 GAME_KEY = 'superfarmer:game'
 NUM_PLAYERS = 1
 ANIMALS = ["rabbit", "sheep", "pig", "cow", "horse"]
@@ -269,6 +270,11 @@ def exchange_route():
     game["mainHerd"] = mainHerd
     game["log"].append(log)
     game["exchangeUsed"] = True
+    # Dodaj sprawdzenie zwycięstwa po udanej wymianie
+    if check_win(player):
+        game["gameEnded"] = True
+        game["winner"] = game["currentPlayer"]
+        game["log"].append("Wygrałeś!")
     save_game(game)
     return jsonify(game)
 
