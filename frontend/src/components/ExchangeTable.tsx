@@ -22,31 +22,57 @@ export const exchangeReverseOptions = [
 
 function ExchangeTable({ onExchange, disabled }: { onExchange: (from: Animal | Dog, to: Animal | Dog) => void; disabled: boolean }) {
   return (
-    <div className="card bg-base-200 shadow p-8 mb-4 max-w-md mx-auto">
-      <h2 className="card-title mb-4 text-2xl">Wymiana</h2>
-      <table className="table w-full">
-        <thead>
-          <tr>
-          </tr>
-        </thead>
-        <tbody>
-          {exchangeOptions.map(opt => (
-            <tr key={opt.label}>
-              <td className="text-xl py-3">{opt.label}</td>
-              <td>
-                <button
-                  className="btn btn-success btn-lg text-lg"
-                  onClick={() => onExchange(opt.from as Animal | Dog, opt.to as Animal | Dog)}
-                  disabled={disabled}
-                >
-                  Wymień
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <div className="card bg-base-200 shadow p-8 mb-4 max-w-md mx-auto">
+        <h2 className="card-title mb-4 text-2xl">Wymiana</h2>
+        <table className="table w-full">
+          <thead>
+            <tr></tr>
+          </thead>
+          <tbody>
+            {exchangeOptions.map(opt => (
+              <tr key={opt.label}>
+                <td className="text-xl py-3">{opt.label}</td>
+                <td>
+                  <button
+                    className="btn btn-success btn-lg text-lg"
+                    onClick={() => onExchange(opt.from as Animal | Dog, opt.to as Animal | Dog)}
+                    disabled={disabled}
+                  >
+                    Wymień
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {/* Reverse exchange table */}
+      <div className="card bg-base-200 shadow p-8 mb-4 max-w-md mx-auto">
+        <h2 className="card-title mb-4 text-2xl">Rozmienianie</h2>
+        <table className="table w-full">
+          <thead>
+            <tr></tr>
+          </thead>
+          <tbody>
+            {exchangeReverseOptions.map(opt => (
+              <tr key={opt.label}>
+                <td className="text-xl py-3">{opt.label}</td>
+                <td>
+                  <button
+                    className="btn btn-info btn-lg text-lg"
+                    onClick={() => onExchange(opt.from as Animal | Dog, opt.to as Animal | Dog)}
+                    disabled={disabled}
+                  >
+                    Rozmień
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

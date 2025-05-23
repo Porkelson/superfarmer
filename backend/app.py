@@ -159,62 +159,64 @@ def exchange_animals(player, mainHerd, from_, to_, exchangeUsed):
     log = ""
     if exchangeUsed:
         return player, mainHerd, "Wymiana już została wykonana w tej turze!"
-    # Szukaj przelicznika w obie strony
+
+    # Try to find a matching exchange in EXCHANGE_TABLE
+    found = None
     for key, ex in EXCHANGE_TABLE.items():
-        # W górę (np. 6 królików -> 1 owca)
         if ex["from"] == from_ and ex["to"] == to_:
-            if (from_ in DOGS and player[from_ + 's'] >= ex["cost"]) or (from_ in ANIMALS and player["animals"][from_] >= ex["cost"]):
-                if (to_ in DOGS and mainHerd[to_ + 's'] > 0) or (to_ in ANIMALS and mainHerd[to_] > 0):
-                    # Odejmij od gracza
-                    if from_ in DOGS:
-                        player[from_ + 's'] -= ex["cost"]
-                    else:
-                        player["animals"][from_] -= ex["cost"]
-                    # Dodaj do głównego stada
-                    if from_ in DOGS:
-                        mainHerd[from_ + 's'] += ex["cost"]
-                    else:
-                        mainHerd[from_] += ex["cost"]
-                    # Dodaj do gracza
-                    if to_ in DOGS:
-                        player[to_ + 's'] += 1
-                        mainHerd[to_ + 's'] -= 1
-                    else:
-                        player["animals"][to_] += 1
-                        mainHerd[to_] -= 1
-                    log = f"Wymiana: {ex['cost']} {from_} na 1 {to_}"
-                else:
-                    log = f"Brak {to_} w głównym stadzie!"
-            else:
-                log = f"Za mało {from_} do wymiany!"
+            found = (ex, False)  # normal direction
             break
-        # W dół (np. 1 owca -> 6 królików)
-        elif ex["from"] == to_ and ex["to"] == from_:
-            if (to_ in DOGS and player[to_ + 's'] >= 1) or (to_ in ANIMALS and player["animals"][to_] >= 1):
-                if (from_ in DOGS and mainHerd[from_ + 's'] >= ex["cost"]) or (from_ in ANIMALS and mainHerd[from_] >= ex["cost"]):
-                    # Odejmij od gracza
-                    if to_ in DOGS:
-                        player[to_ + 's'] -= 1
-                    else:
-                        player["animals"][to_] -= 1
-                    # Dodaj do głównego stada
-                    if to_ in DOGS:
-                        mainHerd[to_ + 's'] += 1
-                    else:
-                        mainHerd[to_] += 1
-                    # Dodaj do gracza
-                    if from_ in DOGS:
-                        player[from_ + 's'] += ex["cost"]
-                        mainHerd[from_ + 's'] -= ex["cost"]
-                    else:
-                        player["animals"][from_] += ex["cost"]
-                        mainHerd[from_] -= ex["cost"]
-                    log = f"Wymiana: 1 {to_} na {ex['cost']} {from_}"
-                else:
-                    log = f"Brak {from_} w głównym stadzie!"
-            else:
-                log = f"Za mało {to_} do wymiany!"
+        if ex["from"] == to_ and ex["to"] == from_:
+            found = (ex, True)   # reverse direction
             break
+    if not found:
+        return player, mainHerd, "Nieprawidłowa wymiana!"
+
+    ex, reverse = found
+    # Normal exchange (e.g. 6 rabbits -> 1 sheep)
+    if not reverse:
+        # Check if player has enough 'from_' animals
+        if (from_ in DOGS and player[from_ + 's'] < ex["cost"]) or (from_ in ANIMALS and player["animals"][from_] < ex["cost"]):
+            return player, mainHerd, f"Za mało {from_} do wymiany!"
+        # Check if main herd has at least 1 'to_'
+        if (to_ in DOGS and mainHerd[to_ + 's'] < 1) or (to_ in ANIMALS and mainHerd[to_] < 1):
+            return player, mainHerd, f"Brak {to_} w głównym stadzie!"
+        # Perform exchange
+        if from_ in DOGS:
+            player[from_ + 's'] -= ex["cost"]
+            mainHerd[from_ + 's'] += ex["cost"]
+        else:
+            player["animals"][from_] -= ex["cost"]
+            mainHerd[from_] += ex["cost"]
+        if to_ in DOGS:
+            player[to_ + 's'] += 1
+            mainHerd[to_ + 's'] -= 1
+        else:
+            player["animals"][to_] += 1
+            mainHerd[to_] -= 1
+        log = f"Wymiana: {ex['cost']} {from_} na 1 {to_}"
+    # Reverse exchange (e.g. 1 sheep -> 6 rabbits)
+    else:
+        # Check if player has at least 1 ex['to'] (the animal being exchanged away)
+        if (ex["to"] in DOGS and player[ex["to"] + 's'] < 1) or (ex["to"] in ANIMALS and player["animals"][ex["to"]] < 1):
+            return player, mainHerd, f"Za mało {ex['to']} do wymiany!"
+        # Check if main herd has enough ex['from'] (the animal being received)
+        if (ex["from"] in DOGS and mainHerd[ex["from"] + 's'] < ex["cost"]) or (ex["from"] in ANIMALS and mainHerd[ex["from"]] < ex["cost"]):
+            return player, mainHerd, f"Brak {ex['from']} w głównym stadzie!"
+        # Perform reverse exchange
+        if ex["to"] in DOGS:
+            player[ex["to"] + 's'] -= 1
+            mainHerd[ex["to"] + 's'] += 1
+        else:
+            player["animals"][ex["to"]] -= 1
+            mainHerd[ex["to"]] += 1
+        if ex["from"] in DOGS:
+            player[ex["from"] + 's'] += ex["cost"]
+            mainHerd[ex["from"] + 's'] -= ex["cost"]
+        else:
+            player["animals"][ex["from"]] += ex["cost"]
+            mainHerd[ex["from"]] -= ex["cost"]
+        log = f"Wymiana: 1 {ex['to']} na {ex['cost']} {ex['from']}"
     return player, mainHerd, log
 
 @app.route('/game', methods=['GET'])

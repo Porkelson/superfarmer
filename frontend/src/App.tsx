@@ -15,6 +15,7 @@ import GameRulesModal from "./components/GameRulesModal";
 function App() {
   const [game, setGame] = useState<GameState | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showLog, setShowLog] = useState(false);
@@ -25,7 +26,8 @@ function App() {
 
   // Pobierz stan gry na start
   useEffect(() => {
-    fetchGame();
+    setInitialLoading(true);
+    Promise.resolve(fetchGame()).finally(() => setInitialLoading(false));
   }, [fetchGame]);
 
   // Handler rzutu kośćmi
@@ -41,6 +43,16 @@ function App() {
   };
 
   // Defensywna obsługa niepoprawnych danych gry
+  if (initialLoading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-base-200 z-[9999]">
+        <div className="flex flex-col items-center">
+          <span className="loading loading-spinner loading-lg mb-4"></span>
+          <span className="text-xl font-bold">Ładowanie gry...</span>
+        </div>
+      </div>
+    );
+  }
   if (!game || !game.players || !Array.isArray(game.players) || !game.players[0] || !game.players[0].animals) {
     return <div className="p-8">Błąd: niepoprawny stan gry. <button className="btn btn-secondary ml-2" onClick={fetchGame}>Spróbuj ponownie</button></div>;
   }
@@ -77,7 +89,7 @@ function App() {
         </div>
         {/* Right column */}
         <div className="flex flex-col gap-4 w-full md:w-1/2 max-h-full overflow-y-auto">
-          <ExchangeTable onExchange={exchange} disabled={game.gameEnded || loading || game.exchangeUsed} />
+          <ExchangeTable onExchange={exchange} disabled={game.gameEnded || loading || game.exchangeUsed || !rollUsed} />
         </div>
       </div>
       <GameEndChecker gameEnded={game.gameEnded} onReset={reset} />

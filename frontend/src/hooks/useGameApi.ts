@@ -10,6 +10,7 @@ export function useGameApi(
   setLoading: (l: boolean) => void
 ) {
   const fetchGame = useCallback(() => {
+    setLoading(true);
     fetch(`${API_URL}/game`)
       .then(async res => {
         const data = await res.json();
@@ -19,12 +20,14 @@ export function useGameApi(
         } else {
           setGame(data);
         }
+        setLoading(false);
       })
       .catch(() => {
         setError("Błąd połączenia z backendem");
         setGame(null as any);
+        setLoading(false);
       });
-  }, [setGame, setError]);
+  }, [setGame, setError, setLoading]);
 
   const roll = useCallback(async () => {
     setLoading(true);
