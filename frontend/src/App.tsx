@@ -19,6 +19,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showLog, setShowLog] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [rollUsed, setRollUsed] = useState(false);
 
   const { fetchGame, roll, reset, exchange } = useGameApi(setGame, setError, setSuccess, setLoading);
 
@@ -26,6 +27,26 @@ function App() {
   useEffect(() => {
     fetchGame();
   }, [fetchGame]);
+
+  // Handler rzutu kośćmi
+  const handleRoll = async () => {
+    await roll();
+    setRollUsed(true);
+  };
+
+  // Handler końca tury
+  const handleEndTurn = () => {
+    setRollUsed(false);
+    // Wyczyść wynik kości
+    setGame(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        diceResult: undefined,
+        log: [...prev.log, 'Tura zakończona.']
+      };
+    });
+  };
 
   // Defensywna obsługa niepoprawnych danych gry
   if (!game || !game.players || !Array.isArray(game.players) || !game.players[0] || !game.players[0].animals) {
@@ -35,9 +56,9 @@ function App() {
   return (
     <div className="container mx-auto p-4 max-w-6xl h-screen flex flex-col">
       <div className="flex items-center justify-between mb-6 gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <h1 className="text-3xl font-bold text-center whitespace-nowrap">Superfarmer</h1>
-          <button className="btn btn-circle btn-ghost btn-sm" aria-label="Zasady gry" onClick={() => setShowRulesModal(true)}>
+          <button className="btn btn-circle btn-ghost btn-sm align-middle" aria-label="Zasady gry" onClick={() => setShowRulesModal(true)}>
             <span className="text-xl">?</span>
           </button>
         </div>
@@ -51,11 +72,15 @@ function App() {
           <PlayerBoard player={game.players[0]} />
           <MainHerd mainHerd={game.mainHerd} />
           <div className="flex flex-col gap-2 w-full">
+            <DiceRoller onRoll={handleRoll} diceResult={game.diceResult} gameEnded={game.gameEnded || loading || rollUsed} />
             <div className="flex flex-row gap-2 w-full mb-2">
+              <button className="btn btn-warning h-12 text-lg" style={{minWidth: '120px'}} onClick={handleEndTurn} disabled={!rollUsed}>Zakończ turę</button>
               <button className="btn btn-primary h-12 text-lg" style={{minWidth: '120px'}} onClick={() => setShowLog(true)}>Pokaż logi</button>
               <button className="btn btn-secondary h-12 text-lg" style={{minWidth: '120px'}} onClick={reset} disabled={game.gameEnded || loading}>Reset gry</button>
             </div>
-            <DiceRoller onRoll={roll} diceResult={game.diceResult} gameEnded={game.gameEnded || loading} />
+            <div className="flex flex-row gap-2 w-full mb-2">
+              
+            </div>
           </div>
         </div>
         {/* Right column */}

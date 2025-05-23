@@ -10,7 +10,7 @@ interface DiceRollerProps {
 function DiceRoller({ onRoll, diceResult, gameEnded, buttonClassName = "btn btn-primary" }: DiceRollerProps) {
   return (
     <div className="mb-4 flex gap-2 items-center">
-      <button className="btn btn-primary" onClick={onRoll} disabled={gameEnded}>
+      <button className="btn btn-primary h-12 text-lg" onClick={onRoll} disabled={gameEnded}>
         Rzuć kostkami
       </button>
       {diceResult && (
