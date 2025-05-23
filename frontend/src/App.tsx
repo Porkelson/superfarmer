@@ -10,6 +10,7 @@ import ThemeSwitcher from "./components/ThemeSwitcher";
 import { useGameApi } from "./hooks/useGameApi";
 import Notification from "./components/Notification";
 import GameLogModal from "./components/GameLogModal";
+import GameRulesModal from "./components/GameRulesModal";
 
 function App() {
   const [game, setGame] = useState<GameState | null>(null);
@@ -17,6 +18,7 @@ function App() {
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showLog, setShowLog] = useState(false);
+  const [showRulesModal, setShowRulesModal] = useState(false);
 
   const { fetchGame, roll, reset, exchange } = useGameApi(setGame, setError, setSuccess, setLoading);
 
@@ -33,7 +35,12 @@ function App() {
   return (
     <div className="container mx-auto p-4 max-w-6xl h-screen flex flex-col">
       <div className="flex items-center justify-between mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-center whitespace-nowrap">Superfarmer</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-center whitespace-nowrap">Superfarmer</h1>
+          <button className="btn btn-circle btn-ghost btn-sm" aria-label="Zasady gry" onClick={() => setShowRulesModal(true)}>
+            <span className="text-xl">?</span>
+          </button>
+        </div>
         <div className="flex-shrink-0"><ThemeSwitcher /></div>
       </div>
       <Notification message={error} type="error" onClose={() => setError(null)} />
@@ -44,9 +51,9 @@ function App() {
           <PlayerBoard player={game.players[0]} />
           <MainHerd mainHerd={game.mainHerd} />
           <div className="flex flex-col gap-2 w-full">
-            <div className="flex flex-row gap-4 w-full mb-2">
-              <button className="btn w-1/2 h-12 text-lg" style={{minWidth: '120px'}} onClick={() => setShowLog(true)}>Pokaż logi</button>
-              <button className="btn btn-secondary w-1/2 h-12 text-lg" style={{minWidth: '120px'}} onClick={reset} disabled={game.gameEnded || loading}>Reset gry</button>
+            <div className="flex flex-row gap-2 w-full mb-2">
+              <button className="btn btn-primary h-12 text-lg" style={{minWidth: '120px'}} onClick={() => setShowLog(true)}>Pokaż logi</button>
+              <button className="btn btn-secondary h-12 text-lg" style={{minWidth: '120px'}} onClick={reset} disabled={game.gameEnded || loading}>Reset gry</button>
             </div>
             <DiceRoller onRoll={roll} diceResult={game.diceResult} gameEnded={game.gameEnded || loading} />
           </div>
@@ -58,6 +65,7 @@ function App() {
       </div>
       <GameEndChecker gameEnded={game.gameEnded} onReset={reset} />
       {showLog && <GameLogModal log={game.log} onClose={() => setShowLog(false)} />}
+      {showRulesModal && <GameRulesModal onClose={() => setShowRulesModal(false)} />}
     </div>
   );
 }
