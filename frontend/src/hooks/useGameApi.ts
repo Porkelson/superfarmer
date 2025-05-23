@@ -87,5 +87,18 @@ export function useGameApi(
     [setGame, setError, setSuccess, setLoading]
   );
 
-  return { fetchGame, roll, reset, exchange };
+  const endTurn = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const res = await fetch(`${API_URL}/end-turn`, { method: "POST" });
+    const data = await res.json();
+    if (!res.ok && data.error) {
+      setError(data.error);
+    } else {
+      setGame(data);
+    }
+    setLoading(false);
+  }, [setGame, setError, setLoading]);
+
+  return { fetchGame, roll, reset, exchange, endTurn };
 } 

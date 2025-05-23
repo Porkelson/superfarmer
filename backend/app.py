@@ -134,7 +134,9 @@ def handle_attacks(player, dice, mainHerd):
             log.append("Lis zaatakował, ale mały pies obronił króliki!")
         else:
             if player["animals"]["rabbit"] > 1:
-                log.append(f"Lis zabrał {player['animals']['rabbit'] - 1} królików!")
+                taken = player["animals"]["rabbit"] - 1
+                log.append(f"Lis zabrał {taken} królików!")
+                mainHerd["rabbit"] += taken  # Return to main herd
                 player["animals"]["rabbit"] = 1
     # Wilk
     if dice["die1"] == "wolf" or dice["die2"] == "wolf":
@@ -147,7 +149,8 @@ def handle_attacks(player, dice, mainHerd):
             for animal in ["sheep", "pig", "cow"]:
                 if player["animals"][animal] > 0:
                     lost = True
-                player["animals"][animal] = 0
+                    mainHerd[animal] += player["animals"][animal]  # Return to main herd
+                    player["animals"][animal] = 0
             if lost:
                 log.append("Wilk zabrał wszystkie owce, świnie i krowy!")
     return player, mainHerd, log
@@ -331,6 +334,7 @@ def end_turn():
     game = get_game()
     if not game:
         return jsonify({"error": "Stan gry jest uszkodzony lub niekompletny."}), 500
+    game["log"].append("Tura zakończona.")
     game["currentPlayer"] = (game["currentPlayer"] + 1) % len(game["players"])
     game["exchangeUsed"] = False
     save_game(game)

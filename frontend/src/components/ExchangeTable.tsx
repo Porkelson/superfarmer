@@ -22,22 +22,20 @@ export const exchangeReverseOptions = [
 
 function ExchangeTable({ onExchange, disabled }: { onExchange: (from: Animal | Dog, to: Animal | Dog) => void; disabled: boolean }) {
   return (
-    <div className="card bg-base-200 shadow p-4 mb-4 max-w-xs mx-auto">
-      <h2 className="card-title mb-2">Wymiana</h2>
+    <div className="card bg-base-200 shadow p-8 mb-4 max-w-md mx-auto">
+      <h2 className="card-title mb-4 text-2xl">Wymiana</h2>
       <table className="table w-full">
         <thead>
           <tr>
-            <th>Opcja</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
           {exchangeOptions.map(opt => (
             <tr key={opt.label}>
-              <td>{opt.label}</td>
+              <td className="text-xl py-3">{opt.label}</td>
               <td>
                 <button
-                  className="btn btn-success btn-sm"
+                  className="btn btn-success btn-lg text-lg"
                   onClick={() => onExchange(opt.from as Animal | Dog, opt.to as Animal | Dog)}
                   disabled={disabled}
                 >

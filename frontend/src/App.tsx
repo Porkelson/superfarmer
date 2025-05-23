@@ -21,7 +21,7 @@ function App() {
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [rollUsed, setRollUsed] = useState(false);
 
-  const { fetchGame, roll, reset, exchange } = useGameApi(setGame, setError, setSuccess, setLoading);
+  const { fetchGame, roll, reset, exchange, endTurn } = useGameApi(setGame, setError, setSuccess, setLoading);
 
   // Pobierz stan gry na start
   useEffect(() => {
@@ -35,17 +35,9 @@ function App() {
   };
 
   // Handler końca tury
-  const handleEndTurn = () => {
+  const handleEndTurn = async () => {
     setRollUsed(false);
-    // Wyczyść wynik kości
-    setGame(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        diceResult: undefined,
-        log: [...prev.log, 'Tura zakończona.']
-      };
-    });
+    await endTurn();
   };
 
   // Defensywna obsługa niepoprawnych danych gry
