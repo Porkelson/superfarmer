@@ -3,12 +3,12 @@
 ## Zrzuty ekranu
 
 <p align="center">
-  <img src="screenshot_menu.png" width="500" alt="Menu gry"/>
+  <img src="screenshot_menu.png" width="900" alt="Menu gry"/>
 </p>
 <p align="center"><b>Ekran startowy z wyborem opcji</b></p>
 
 <p align="center">
-  <img src="screenshot_win.png" width="500" alt="Wygrana"/>
+  <img src="screenshot_win.png" width="900" alt="Wygrana"/>
 </p>
 <p align="center"><b>Powiadomienie o zwycięstwie i konfetti</b></p>
 
