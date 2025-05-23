@@ -1,10 +1,31 @@
 # 🐾 Superfarmer
 
-Gra planszowa Superfarmer – wersja webowa (React + Flask + Redis)
+## Zrzuty ekranu
 
-## Jak uruchomić projekt od zera
+| Menu gry | Wygrana | Zasady gry | Wymiana |
+|---|---|---|---|
+| ![Menu gry](frontend/public/screenshot_menu.png) | ![Wygrana](frontend/public/screenshot_win.png) | ![Zasady gry](frontend/public/screenshot_rules.png) | ![Wymiana](frontend/public/screenshot_trade.png) |
+| **Ekran startowy z wyborem opcji** | **Powiadomienie o zwycięstwie i konfetti** | **Podgląd zasad gry** | **Tabela wymian i rozmieniania** |
 
-### 1. Sklonuj repozytorium (jeśli jeszcze nie masz)
+---
+
+Webowa wersja gry planszowej Superfarmer (React + Flask + Redis)
+
+---
+
+## Wymagania
+- Node.js (zalecane v18+)
+- npm lub yarn
+- Python 3.8+
+- pip
+- Redis (lokalnie lub zdalnie)
+- **Windows:** do uruchamiania skryptów bashowych (`start-dev.sh`, `start-prod.sh`) wymagany jest [WSL](https://learn.microsoft.com/pl-pl/windows/wsl/) lub [Git Bash](https://gitforwindows.org/)
+
+---
+
+## Jak uruchomić projekt
+
+### 1. Sklonuj repozytorium
 ```bash
 git clone <adres_repo>
 cd superfarmer
@@ -17,7 +38,7 @@ cd superfarmer
 cd backend
 ```
 
-#### b) Utwórz i aktywuj wirtualne środowisko Pythona
+#### b) (Opcjonalnie) Utwórz i aktywuj wirtualne środowisko Pythona
 ```bash
 python3 -m venv venv
 source venv/bin/activate  # Linux/macOS
@@ -30,16 +51,17 @@ venv\Scripts\activate   # Windows
 pip install -r requirements.txt
 ```
 
-#### d) Upewnij się, że Redis jest uruchomiony
+#### d) Upewnij się, że Redis jest **zainstalowany** i uruchomiony
 ```bash
 redis-server
 ```
-Jeśli Redis już działa, nie uruchamiaj go ponownie.
+Jeśli nie masz Redisa, zainstaluj go np. przez `sudo apt install redis-server` lub pobierz z https://redis.io/download
 
 #### e) Uruchom backend Flask
 ```bash
 python app.py
 ```
+Backend będzie dostępny pod adresem: [http://localhost:4000](http://localhost:4000)
 
 ### 3. Frontend (React)
 
@@ -53,12 +75,64 @@ cd ../frontend
 npm install
 ```
 
-#### c) Uruchom frontend
+#### c) Uruchom frontend (tryb developerski)
 ```bash
 npm start
 ```
+Aplikacja będzie dostępna pod adresem: [http://localhost:3000](http://localhost:3000)
 
-Aplikacja powinna być dostępna pod adresem: [http://localhost:3000](http://localhost:3000)
+#### d) Budowanie produkcyjne
+```bash
+npm run build
+```
+Wynik znajdziesz w `frontend/build`
+
+---
+
+## Najważniejsze komendy
+
+### Backend
+- `pip install -r requirements.txt` – instalacja zależności Pythona
+- `python app.py` – uruchomienie serwera Flask
+- `redis-server` – uruchomienie serwera Redis (jeśli nie działa w tle)
+
+### Frontend
+- `npm install` – instalacja zależności Node.js
+- `npm start` – uruchomienie aplikacji w trybie developerskim (hot reload)
+- `npm run build` – budowanie aplikacji do produkcji (statyczny katalog `build`)
+
+### Skrypty automatyczne
+- `./start-dev.sh` – uruchamia backend i frontend w trybie developerskim (wymaga uprawnień do uruchamiania skryptów bash)
+- `./start-prod.sh` – uruchamia backend i frontend w trybie produkcyjnym (wymaga wcześniejszego zbudowania frontendu)
+
+---
+
+## Szybki start (TL;DR)
+```bash
+# Najprościej: jeden skrypt (Linux/macOS/WSL/Git Bash)
+./start-dev.sh
+
+# Lub ręcznie:
+cd backend
+pip install -r requirements.txt
+redis-server &
+python app.py
+
+# Nowe okno terminala
+cd ../frontend
+npm install
+npm start
+```
+
+---
+
+## Rozwiązywanie problemów (Troubleshooting)
+- **Windows:** Skrypty bashowe (`.sh`) wymagają WSL lub Git Bash. Na czystym CMD/PowerShell nie zadziałają.
+- **Redis:** Jeśli pojawia się błąd połączenia z Redisem, upewnij się, że Redis jest zainstalowany i uruchomiony (`redis-server`).
+- **Port zajęty:** Jeśli pojawi się błąd, że port 3000 (frontend) lub 4000 (backend) jest zajęty, zamknij inne aplikacje korzystające z tych portów lub zmień port w konfiguracji.
+- **Uprawnienia do skryptów:** Jeśli nie możesz uruchomić `./start-dev.sh`, nadaj uprawnienia: `chmod +x start-dev.sh`.
+- **Brak Pythona lub Node w PATH:** Upewnij się, że polecenia `python`, `pip`, `node`, `npm` są dostępne w terminalu.
+- **Brak połączenia frontend ↔ backend:** Sprawdź, czy oba serwery są uruchomione i czy nie blokuje ich firewall.
 
 ---
 
