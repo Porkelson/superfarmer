@@ -66,7 +66,7 @@ function App() {
           <div className="flex flex-col gap-2 w-full">
             <DiceRoller onRoll={handleRoll} diceResult={game.diceResult} gameEnded={game.gameEnded || loading || rollUsed} />
             <div className="flex flex-row gap-2 w-full mb-2">
-              <button className="btn btn-warning h-12 text-lg" style={{minWidth: '120px'}} onClick={handleEndTurn} disabled={!rollUsed}>Zakończ turę</button>
+              <button className="btn btn-warning h-12 text-lg" style={{minWidth: '120px'}} onClick={handleEndTurn} disabled={!rollUsed || game.gameEnded}>Zakończ turę</button>
               <button className="btn btn-primary h-12 text-lg" style={{minWidth: '120px'}} onClick={() => setShowLog(true)}>Pokaż logi</button>
               <button className="btn btn-secondary h-12 text-lg" style={{minWidth: '120px'}} onClick={reset} disabled={game.gameEnded || loading}>Reset gry</button>
             </div>
