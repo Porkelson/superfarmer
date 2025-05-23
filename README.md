@@ -1,10 +1,10 @@
-# 🐾 Superfarmer
+#  Superfarmer
 
 ## Zrzuty ekranu
 
 | Menu gry | Wygrana | Zasady gry | Wymiana |
 |---|---|---|---|
-| ![Menu gry](frontend/public/screenshot_menu.png) | ![Wygrana](frontend/public/screenshot_win.png) | ![Zasady gry](frontend/public/screenshot_rules.png) | ![Wymiana](frontend/public/screenshot_trade.png) |
+| ![Menu gry](screenshot_menu.png) | ![Wygrana](screenshot_win.png) | ![Zasady gry](screenshot_rules.png) | ![Wymiana](screenshot_trade.png) |
 | **Ekran startowy z wyborem opcji** | **Powiadomienie o zwycięstwie i konfetti** | **Podgląd zasad gry** | **Tabela wymian i rozmieniania** |
 
 ---
