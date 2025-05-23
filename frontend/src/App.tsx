@@ -51,7 +51,7 @@ function App() {
   };
 
   // Defensywna obsługa niepoprawnych danych gry
-  if (initialLoading) {
+  if (!game) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-base-200 z-[9999]">
         <div className="flex flex-col items-center">
@@ -61,7 +61,7 @@ function App() {
       </div>
     );
   }
-  if (!game || !game.players || !Array.isArray(game.players) || !game.players[0] || !game.players[0].animals) {
+  if (!game.players || !Array.isArray(game.players) || !game.players[0] || !game.players[0].animals) {
     return <div className="p-8">Błąd: niepoprawny stan gry. <button className="btn btn-secondary ml-2" onClick={fetchGame}>Spróbuj ponownie</button></div>;
   }
 
@@ -69,7 +69,7 @@ function App() {
     <div className="container mx-auto p-4 max-w-6xl h-screen flex flex-col">
       <div className="flex items-center justify-between mb-6 gap-4">
         <div className="flex items-center gap-1">
-          <h1 className="text-3xl font-bold text-center whitespace-nowrap">Superfarmer</h1>
+          <h1 className="text-3xl font-bold text-center whitespace-nowrap">Super Farmer</h1>
           <button className="btn btn-circle btn-ghost btn-sm align-middle" aria-label="Zasady gry" onClick={() => setShowRulesModal(true)}>
             <span className="text-xl">?</span>
           </button>
