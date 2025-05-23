@@ -2,10 +2,25 @@
 
 ## Zrzuty ekranu
 
-| Menu gry | Wygrana | Zasady gry | Wymiana |
-|---|---|---|---|
-| ![Menu gry](screenshot_menu.png) | ![Wygrana](screenshot_win.png) | ![Zasady gry](screenshot_rules.png) | ![Wymiana](screenshot_trade.png) |
-| **Ekran startowy z wyborem opcji** | **Powiadomienie o zwycięstwie i konfetti** | **Podgląd zasad gry** | **Tabela wymian i rozmieniania** |
+<p align="center">
+  <img src="screenshot_menu.png" width="500" alt="Menu gry"/>
+</p>
+<p align="center"><b>Ekran startowy z wyborem opcji</b></p>
+
+<p align="center">
+  <img src="screenshot_win.png" width="500" alt="Wygrana"/>
+</p>
+<p align="center"><b>Powiadomienie o zwycięstwie i konfetti</b></p>
+
+<p align="center">
+  <img src="screenshot_rules.png" width="500" alt="Zasady gry"/>
+</p>
+<p align="center"><b>Podgląd zasad gry</b></p>
+
+<p align="center">
+  <img src="screenshot_trade.png" width="500" alt="Wymiana"/>
+</p>
+<p align="center"><b>Tabela wymian i rozmieniania</b></p>
 
 ---
 
