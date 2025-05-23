@@ -20,14 +20,17 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showLog, setShowLog] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
-  const [rollUsed, setRollUsed] = useState(false);
+  const [rollUsed, setRollUsed] = useState<boolean>(() => false);
 
   const { fetchGame, roll, reset, exchange, endTurn } = useGameApi(setGame, setError, setSuccess, setLoading);
 
   // Pobierz stan gry na start
   useEffect(() => {
     setInitialLoading(true);
-    Promise.resolve(fetchGame()).finally(() => setInitialLoading(false));
+    Promise.resolve(fetchGame()).finally(() => {
+      setInitialLoading(false);
+      setRollUsed(false); // allow rolling dice at the start
+    });
   }, [fetchGame]);
 
   // Handler rzutu kośćmi
@@ -40,6 +43,11 @@ function App() {
   const handleEndTurn = async () => {
     setRollUsed(false);
     await endTurn();
+  };
+
+  const resetAndAllowRoll = async () => {
+    await reset();
+    setRollUsed(false);
   };
 
   // Defensywna obsługa niepoprawnych danych gry
@@ -80,7 +88,7 @@ function App() {
             <div className="flex flex-row gap-2 w-full mb-2">
               <button className="btn btn-warning h-12 text-lg" style={{minWidth: '120px'}} onClick={handleEndTurn} disabled={!rollUsed || game.gameEnded}>Zakończ turę</button>
               <button className="btn btn-primary h-12 text-lg" style={{minWidth: '120px'}} onClick={() => setShowLog(true)}>Pokaż logi</button>
-              <button className="btn btn-secondary h-12 text-lg" style={{minWidth: '120px'}} onClick={reset} disabled={game.gameEnded || loading}>Reset gry</button>
+              <button className="btn btn-secondary h-12 text-lg" style={{minWidth: '120px'}} onClick={resetAndAllowRoll} disabled={game.gameEnded || loading}>Reset gry</button>
             </div>
             <div className="flex flex-row gap-2 w-full mb-2">
               
@@ -92,7 +100,7 @@ function App() {
           <ExchangeTable onExchange={exchange} disabled={game.gameEnded || loading || game.exchangeUsed || !rollUsed} />
         </div>
       </div>
-      <GameEndChecker gameEnded={game.gameEnded} onReset={reset} />
+      <GameEndChecker gameEnded={game.gameEnded} onReset={resetAndAllowRoll} />
       {showLog && <GameLogModal log={game.log} onClose={() => setShowLog(false)} />}
       {showRulesModal && <GameRulesModal onClose={() => setShowRulesModal(false)} />}
     </div>
